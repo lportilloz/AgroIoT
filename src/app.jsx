@@ -29,7 +29,7 @@ function App() {
 
         return () => clearInterval(intervalo);
     }, []);  */
-// aca usamos datos inventados, la q va es ;la de arriba
+    // aca usamos datos inventados, la q va es ;la de arriba
     useEffect(() => {
         // 2. Simulamos que los datos cambian un poquito cada 3 segundos
         const intervalo = setInterval(() => {
@@ -75,19 +75,20 @@ function App() {
                     <div class="variable-card">
                         <p>Humedad</p>
                         <p class="num-variable">{datos.temperatura}C</p>
-                        <p class="num-variable">20 %</p>
                         <p class="sensor">DHT22</p>
                         <p class="estado-variable">✖ Riesgo de hongos (Botrytis)</p>
                     </div>
                     <div class="variable-card">
                         <p>Intensidad luminica</p>
-                        <p class="num-variable">40 %</p>
+                        <p class="num-variable">{datos.luz}C</p>
+
                         <p class="sensor">LDR</p>
                         <p class="estado-variable">OK</p>
                     </div>
                     <div class="variable-card">
                         <p>Nivel de tanque</p>
-                        <p class="num-variable">30 %</p>
+                        <p class="num-variable">{datos.tanque}</p>
+
                         <p class="sensor">HC-SR04</p>
                         <p class="estado-variable">Tanque lleno</p>
                     </div>
