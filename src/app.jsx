@@ -1,135 +1,171 @@
-import './style.css'
 import { useState, useEffect } from 'react';
+import './style.css';
 
 function App() {
-    // const [datos, setDatos] = useState({ temperatura: 0, humedad: 0, luz: 0, tanque: 0 });
     const [datos, setDatos] = useState({
         temperatura: 24.5,
+        infoTemperatura: "Óptimo",
         humedad: 65.0,
+        infoHumedad: "Óptimo",
         luz: 45,
-        tanque: 30
+        infoLuz: "Luz óptima",
+        tanque: 30,
+        infoTanque: "Nivel de agua óptimo"
     });
-    /* useEffect(() => {
-        // Reemplazá con la IP real que te tire el monitor serie de Arduino
-        const IP_ESP8266 = "http://192.168.1.45/datos";
 
-        const obtenerDatos = async () => {
-            try {
-                const respuesta = await fetch(IP_ESP8266);
-                const json = await respuesta.json();
-                setDatos(json);
-            } catch (error) {
-                console.error("Error al conectar con el ESP8266:", error);
-            }
-        };
+    const [historial, setHistorial] = useState([]);
 
-        // Consultar al iniciar y luego cada 3 segundos
-        obtenerDatos();
-        const intervalo = setInterval(obtenerDatos, 3000);
+    // Funciones para calcular los mensajes basados en los valores
+    const calcularTemperatura = (t) => {
+        if (t < 18) return "Riesgo de bache térmico.";
+        if (t > 26) return "Estrés térmico.";
+        return "La temperatura es óptima.";
+    };
 
-        return () => clearInterval(intervalo);
-    }, []);  */
-    // aca usamos datos inventados, la q va es ;la de arriba
+    const calcularHumedad = (h) => {
+        if (h < 50) return "Deshidratación.";
+        if (h > 75) return "Alto riesgo de hongos.";
+        return "La humedad es óptima.";
+    };
+
+    const calcularIluminacion = (l) => {
+        if (l < 30) return "Luz insuficiente.";
+        if (l > 80) return "Sol directo.";
+        return "Luz óptima.";
+    };
+
+    const calcularTanque = (tanque) => {
+        if (tanque > 80) return "Alerta de vaciado.";
+        if (tanque < 20) return "Tanque lleno.";
+        return "Nivel óptimo.";
+    };
+
     useEffect(() => {
-        // 2. Simulamos que los datos cambian un poquito cada 3 segundos
         const intervalo = setInterval(() => {
-            setDatos({
-                temperatura: (22 + Math.random() * 5).toFixed(1), // Varía entre 22 y 27
-                humedad: (50 + Math.random() * 20).toFixed(1),   // Varía entre 50 y 70
-                luz: Math.floor(Math.random() * 100),             // Varía entre 0 y 100
-                tanque: Math.floor(10 + Math.random() * 70)       // Varía entre 10 y 80
-            });
+            // 1. Generamos valores simulados (acá después irá tu fetch al ESP8266)
+            const nuevaTemp = Number((20 + Math.random() * 8).toFixed(1));
+            const nuevaHum = Number((45 + Math.random() * 35).toFixed(1));
+            const nuevaLuz = Math.floor(Math.random() * 100);
+            const nuevoTanque = Math.floor(10 + Math.random() * 85);
+
+            const lecturaActual = {
+                temperatura: nuevaTemp,
+                infoTemperatura: calcularTemperatura(nuevaTemp),
+                humedad: nuevaHum,
+                infoHumedad: calcularHumedad(nuevaHum),
+                luz: nuevaLuz,
+                infoLuz: calcularIluminacion(nuevaLuz),
+                tanque: nuevoTanque,
+                infoTanque: calcularTanque(nuevoTanque)
+            };
+
+            setDatos(lecturaActual);
+
+            // 2. Actualizamos el historial guardando solo los últimos 5
+            setHistorial((prev) => [lecturaActual, ...prev].slice(0, 5));
+
         }, 3000);
 
         return () => clearInterval(intervalo);
     }, []);
 
-
     return (
-        < >
-            <div class="nav">
-                <div>
-                    <p class="sub">AgroIoT</p>
-                    <p class="sub">Invernadero hidropónico</p>
-                    <p class="sub">Nodo ESP8266</p>
+        <>
+            <div className="nav">
+                <img className="icono" src="/images/icono.png" alt="icono-pagina" />
+                <h1 className="sub">AgroIoT</h1>
+
+            </div>
+
+            <div>
+                <h2 className='titulo'>Estado del invernadero</h2>
+                <div className="variables">
+
+                    <div className="variable-card">
+                        <p>Temperatura</p>
+                        <p className="num-variable">{datos.temperatura}°C</p>
+                        <p className="sensor">DHT22</p>
+                        <p className="estado-variable">{datos.infoTemperatura}</p>
+                    </div>
+
+                    <div className="variable-card">
+                        <p>Humedad</p>
+                        <p className="num-variable">{datos.humedad}%</p>
+                        <p className="sensor">DHT22</p>
+                        <p className="estado-variable">{datos.infoHumedad}</p>
+                    </div>
+
+                    <div className="variable-card">
+                        <p>Intensidad lumínica</p>
+                        <p className="num-variable">{datos.luz}%</p>
+                        <p className="sensor">LDR</p>
+                        <p className="estado-variable">{datos.infoLuz}</p>
+                    </div>
+
+                    <div className="variable-card">
+                        <p>Nivel de tanque</p>
+                        <p className="num-variable">{datos.tanque} cm</p>
+                        <p className="sensor">HC-SR04</p>
+                        <p className="estado-variable">{datos.infoTanque}</p>
+                    </div>
+
                 </div>
-                <div class="chips">
-                    <p class="chip">Wi-Fi conectado</p>
-                    <p class="chip">IP 192.168.1.45</p>
-                    <p class="chip">Última lectura: 14:32:05</p>
-                    <button class="btn">Modo oscuro</button>
-                </div>
+            </div>
+
+            {/* <h2 className='titulo'>Historial (Últimas 5 mediciones)</h2>
+            <div >
+                <ul>
+                    {historial.map((item, index) => (
+                        <li key={index}>
+                            Temp: <strong>{item.temperatura}°C</strong> |
+                            Hum: <strong>{item.humedad}%</strong> |
+                            Luz: <strong>{item.luz}%</strong> |
+                            Tanque: <strong>{item.tanque}cm</strong>
+                        </li>
+                    ))}
+                </ul>
+            </div> */}
+
+            <h2 className='titulo'>Historial</h2>
+            <div style={{ padding: '0 20px', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                    <thead>
+                        <tr style={{ borderBottom: '2px solid #eaeaea', color: '#666', fontSize: '0.9rem' }}>
+                            <th style={{ padding: '12px' }}>Hora</th>
+                            <th style={{ padding: '12px' }}>Temp.</th>
+                            <th style={{ padding: '12px' }}>Hum.</th>
+                            <th style={{ padding: '12px' }}>Luz</th>
+                            <th style={{ padding: '12px' }}>Tanque</th>
+                            <th style={{ padding: '12px' }}>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {historial.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" style={{ padding: '15px', textAlign: 'center', color: '#888' }}>Esperando mediciones...</td>
+                            </tr>
+                        ) : (
+                            historial.map((item, index) => (
+                                <tr key={index} style={{ borderBottom: '1px solid #f0f0f0', fontSize: '0.9rem' }}>
+                                    <td style={{ padding: '12px' }}>{item.hora}</td>
+                                    <td style={{ padding: '12px' }}>{item.temperatura} °C</td>
+                                    <td style={{ padding: '12px' }}>{item.humedad} %</td>
+                                    <td style={{ padding: '12px' }}>{item.luz} %</td>
+                                    <td style={{ padding: '12px' }}>{item.tanque} cm</td>
+                                    <td style={{ padding: '12px' }}>
+
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
 
 
             <div>
-                <h2>VARIABLES DEL ENTORNO</h2>
-                <div class="variables">
-
-                    <div class="variable-card">
-                        <p>Temperatura</p>
-                        <p class="num-variable">{datos.temperatura}C</p>
-                        <p class="sensor">DHT22</p>
-                        <p class="estado-variable">✖ Estrés térmico</p>
-                    </div>
-                    <div class="variable-card">
-                        <p>Humedad</p>
-                        <p class="num-variable">{datos.temperatura}C</p>
-                        <p class="sensor">DHT22</p>
-                        <p class="estado-variable">✖ Riesgo de hongos (Botrytis)</p>
-                    </div>
-                    <div class="variable-card">
-                        <p>Intensidad luminica</p>
-                        <p class="num-variable">{datos.luz}C</p>
-
-                        <p class="sensor">LDR</p>
-                        <p class="estado-variable">OK</p>
-                    </div>
-                    <div class="variable-card">
-                        <p>Nivel de tanque</p>
-                        <p class="num-variable">{datos.tanque}</p>
-
-                        <p class="sensor">HC-SR04</p>
-                        <p class="estado-variable">Tanque lleno</p>
-                    </div>
-                </div>
+                <h2 className='titulo'>Actuadores</h2>
             </div>
-
-            <h2>Actuadores</h2>
-            <div class="grid g3" id="acts"></div>
-            <h1 class="grid g3" id="acts">hola</h1 >
-
-
-            {/* < h2 > Historial</h2 >
-        <div class="card">
-            <div class="tools">
-                <div class="seg" id="range"><button>1 h</button><button class="on">24 h</button><button>7 días</button>
-                </div>
-                <button class="btn" id="csv">Exportar CSV</button>
-            </div>
-            <svg class="chart" id="chart" viewBox="0 0 900 330" role="img"
-                aria-label="Gráficos de temperatura, humedad y luz con su rango óptimo"></svg>
-            <div class="wrapt">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Hora</th>
-                            <th>Temp.</th>
-                            <th>Hum.</th>
-                            <th>Luz</th>
-                            <th>Tanque</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rows"></tbody>
-                </table>
-            </div>
-        </div>
-
-* <p>Temperatura: <strong>{datos.temperatura} °C</strong></p>
-      <p>Humedad: <strong>{datos.humedad} %</strong></p>
-      <p>Luz: <strong>{datos.luz} %</strong></p>
-      <p>Tanque de Agua: <strong>{datos.tanque} cm</strong></p> */}
         </>
     );
 }
