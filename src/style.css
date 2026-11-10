@@ -7,15 +7,17 @@
     margin: 0;
 }
 
+body {
+    background-color: #ebf0e6;
+
+}
+
+/* Nav */
+
 h1 {
     font-weight: 800;
     font-size: 1rem;
     color: rgb(0, 83, 0);
-
-}
-
-body {
-    background-color: #f5f7f4;
 
 }
 
@@ -30,11 +32,16 @@ body {
     height: 1.3rem;
 }
 
-.chips {
-    margin-right: 1rem;
-    display: flex;
+/* Footer */
 
+.footer {
+    display: flex;
+    background-color: rgb(0, 83, 0);
+    padding: 1.5rem;
+    margin-top: 1rem;
 }
+
+/* Cards de las variables ambientables */
 
 .variable-card {
     height: 13rem;
@@ -60,7 +67,6 @@ body {
     border-radius: 1rem;
     background-color: rgb(230, 255, 231);
     font-size: 1rem;
-
 }
 
 .sensor {
@@ -69,8 +75,24 @@ body {
     font-size: 0.8rem;
 }
 
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.card-image {
+    height: 1.2rem;
+    width: auto;
+}
+
+
+/* Titulos */
 .titulo {
     padding-left: 2rem;
     color: rgb(0, 83, 0);
+    margin-bottom: 1rem;
 
 }

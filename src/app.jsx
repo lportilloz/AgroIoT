@@ -3,6 +3,7 @@ import './style.css';
 
 function App() {
     const [datos, setDatos] = useState({
+        horaActual:1,
         temperatura: 24.5,
         infoTemperatura: "Óptimo",
         humedad: 65.0,
@@ -42,13 +43,16 @@ function App() {
 
     useEffect(() => {
         const intervalo = setInterval(() => {
-            // 1. Generamos valores simulados (acá después irá tu fetch al ESP8266)
             const nuevaTemp = Number((20 + Math.random() * 8).toFixed(1));
             const nuevaHum = Number((45 + Math.random() * 35).toFixed(1));
             const nuevaLuz = Math.floor(Math.random() * 100);
             const nuevoTanque = Math.floor(10 + Math.random() * 85);
+            
+            // Generamos la hora actual para el historial
+            //const horaActual = new Date().toLocaleTimeString();
 
             const lecturaActual = {
+                hora: horaActual, // <-- Agregado para que la tabla muestre la hora
                 temperatura: nuevaTemp,
                 infoTemperatura: calcularTemperatura(nuevaTemp),
                 humedad: nuevaHum,
@@ -61,7 +65,7 @@ function App() {
 
             setDatos(lecturaActual);
 
-            // 2. Actualizamos el historial guardando solo los últimos 5
+            // Actualizamos el historial guardando solo los últimos 5
             setHistorial((prev) => [lecturaActual, ...prev].slice(0, 5));
 
         }, 3000);
@@ -74,7 +78,6 @@ function App() {
             <div className="nav">
                 <img className="icono" src="/images/icono.png" alt="icono-pagina" />
                 <h1 className="sub">AgroIoT</h1>
-
             </div>
 
             <div>
@@ -82,28 +85,40 @@ function App() {
                 <div className="variables">
 
                     <div className="variable-card">
-                        <p>Temperatura</p>
+                        <div className="card-header">
+                            <p>Temperatura</p>
+                            <img className='card-image' src="/images/thermometer.png" alt="icono-temperatura" />
+                        </div>
                         <p className="num-variable">{datos.temperatura}°C</p>
                         <p className="sensor">DHT22</p>
                         <p className="estado-variable">{datos.infoTemperatura}</p>
                     </div>
 
                     <div className="variable-card">
-                        <p>Humedad</p>
+                        <div className='card-header'>
+                            <p>Humedad</p>
+                            <img className='card-image' src="/images/water-waves.png" alt="icono-humedad" />
+                        </div>
                         <p className="num-variable">{datos.humedad}%</p>
                         <p className="sensor">DHT22</p>
                         <p className="estado-variable">{datos.infoHumedad}</p>
                     </div>
 
                     <div className="variable-card">
-                        <p>Intensidad lumínica</p>
+                        <div className='card-header'>
+                            <p>Intensidad lumínica</p>
+                            <img className='card-image' src="/images/brightness.png" alt="icono-intensidad-luminica" />
+                        </div>
                         <p className="num-variable">{datos.luz}%</p>
                         <p className="sensor">LDR</p>
                         <p className="estado-variable">{datos.infoLuz}</p>
                     </div>
 
                     <div className="variable-card">
-                        <p>Nivel de tanque</p>
+                        <div className='card-header'>
+                            <p>Nivel de tanque</p>
+                            <img className='card-image' src="/images/water-tank.png" alt="icono-tanque" />
+                        </div>
                         <p className="num-variable">{datos.tanque} cm</p>
                         <p className="sensor">HC-SR04</p>
                         <p className="estado-variable">{datos.infoTanque}</p>
@@ -111,20 +126,6 @@ function App() {
 
                 </div>
             </div>
-
-            {/* <h2 className='titulo'>Historial (Últimas 5 mediciones)</h2>
-            <div >
-                <ul>
-                    {historial.map((item, index) => (
-                        <li key={index}>
-                            Temp: <strong>{item.temperatura}°C</strong> |
-                            Hum: <strong>{item.humedad}%</strong> |
-                            Luz: <strong>{item.luz}%</strong> |
-                            Tanque: <strong>{item.tanque}cm</strong>
-                        </li>
-                    ))}
-                </ul>
-            </div> */}
 
             <h2 className='titulo'>Historial</h2>
             <div style={{ padding: '0 20px', overflowX: 'auto' }}>
@@ -136,7 +137,7 @@ function App() {
                             <th style={{ padding: '12px' }}>Hum.</th>
                             <th style={{ padding: '12px' }}>Luz</th>
                             <th style={{ padding: '12px' }}>Tanque</th>
-                            <th style={{ padding: '12px' }}>Estado</th>
+                            <th style={{ padding: '12px' }}>Estado Temp.</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -152,16 +153,13 @@ function App() {
                                     <td style={{ padding: '12px' }}>{item.humedad} %</td>
                                     <td style={{ padding: '12px' }}>{item.luz} %</td>
                                     <td style={{ padding: '12px' }}>{item.tanque} cm</td>
-                                    <td style={{ padding: '12px' }}>
-
-                                    </td>
+                                    <td style={{ padding: '12px' }}>{item.infoTemperatura}</td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
             </div>
-
 
             <div>
                 <h2 className='titulo'>Actuadores</h2>
