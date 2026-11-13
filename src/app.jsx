@@ -2,29 +2,30 @@ import { useState, useEffect } from 'react';
 import './style.css';
 
 // Nombre mDNS del ESP8266. Si no resuelve en tu red, poné la IP que muestra el LCD (ej: '192.168.0.50')
-const ESP_HOST = 'agroiot.local';
+const ESP_HOST = '192.168.1.64';
 const INTERVALO_MS = 3000;
 const MAX_HISTORIAL = 5;
+const TIMEOUT_MS = 20000; // el ESP tarda hasta ~12 s en responder
 
 // ---- Lógica de control (rangos de la consigna) ----
 const evaluar = {
   temperatura: (t) =>
     t < 18 ? { nivel: 'warn', msg: 'Riesgo de bache térmico', accion: 'Poca tasa metabólica' }
-    : t > 26 ? { nivel: 'crit', msg: 'Estrés térmico', accion: 'Activar ventilación / sombra' }
-    : { nivel: 'ok', msg: 'Temperatura óptima', accion: '' },
+      : t > 26 ? { nivel: 'crit', msg: 'Estrés térmico', accion: 'Activar ventilación / sombra' }
+        : { nivel: 'ok', msg: 'Temperatura óptima', accion: '' },
   humedad: (h) =>
     h < 50 ? { nivel: 'warn', msg: 'Deshidratación', accion: 'Transpiración excesiva' }
-    : h > 75 ? { nivel: 'crit', msg: 'Alto riesgo de hongos (Botrytis)', accion: 'Activar aireación' }
-    : { nivel: 'ok', msg: 'Humedad óptima', accion: '' },
+      : h > 75 ? { nivel: 'crit', msg: 'Alto riesgo de hongos (Botrytis)', accion: 'Activar aireación' }
+        : { nivel: 'ok', msg: 'Humedad óptima', accion: '' },
   luz: (l) =>
     l < 30 ? { nivel: 'warn', msg: 'Luz insuficiente', accion: 'Considerar iluminación complementaria' }
-    : l > 80 ? { nivel: 'crit', msg: 'Sol directo', accion: 'Desplegar malla de sombra' }
-    : { nivel: 'ok', msg: 'Luz óptima', accion: '' },
+      : l > 80 ? { nivel: 'crit', msg: 'Sol directo', accion: 'Desplegar malla de sombra' }
+        : { nivel: 'ok', msg: 'Luz óptima', accion: '' },
   // El HC-SR04 mide la distancia tapa → agua: más cm = menos agua
   tanque: (cm) =>
     cm > 80 ? { nivel: 'crit', msg: 'Alerta de vaciado', accion: 'Apagado preventivo de bomba' }
-    : cm < 20 ? { nivel: 'warn', msg: 'Tanque lleno', accion: '' }
-    : { nivel: 'ok', msg: 'Nivel óptimo', accion: '' },
+      : cm < 20 ? { nivel: 'warn', msg: 'Tanque lleno', accion: '' }
+        : { nivel: 'ok', msg: 'Nivel óptimo', accion: '' },
 };
 
 const SENSORES = [
@@ -57,7 +58,7 @@ const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
 async function pedirDatos() {
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), 2500);
+  const timeout = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(`http://${ESP_HOST}/datos`, { signal: ctrl.signal });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -79,6 +80,7 @@ async function pedirDatos() {
 }
 
 function App() {
+  const [forzados, setForzados] = useState({});
   const [datos, setDatos] = useState(null);
   const [historial, setHistorial] = useState(() => leerLS('agroiot:historial', []).slice(0, MAX_HISTORIAL));
   const [conexion, setConexion] = useState('esperando'); // esperando | ok | error
@@ -96,6 +98,7 @@ function App() {
   // ---- Adquisición periódica desde el ESP8266 ----
   useEffect(() => {
     let activo = true;
+    let id;
     const tick = async () => {
       try {
         const lectura = { ...(await pedirDatos()), hora: new Date().toLocaleTimeString('es-AR') };
@@ -104,12 +107,12 @@ function App() {
         setHistorial((prev) => [lectura, ...prev].slice(0, MAX_HISTORIAL));
         setConexion('ok');
       } catch {
-        if (activo) setConexion('error'); // se conserva la última lectura real y el historial
+        if (activo) setConexion('error');
       }
+      if (activo) id = setTimeout(tick, INTERVALO_MS); // el próximo pedido sale recién cuando termina este
     };
     tick();
-    const id = setInterval(tick, INTERVALO_MS);
-    return () => { activo = false; clearInterval(id); };
+    return () => { activo = false; clearTimeout(id); };
   }, []);
 
   const tanqueCritico = datos?.tanque != null && evaluar.tanque(datos.tanque).nivel === 'crit';
@@ -157,7 +160,7 @@ function App() {
         <h2 className="titulo">Actuadores</h2>
         <section className="actuadores">
           {ACTUADORES.map((a) => {
-            const encendido = datos?.actuadores?.[a.key];
+            const encendido = forzados[a.key] ?? datos?.actuadores?.[a.key];
             const bloqueada = a.key === 'bomba' && tanqueCritico;
             const estado = !datos ? '' : bloqueada ? 'bloq' : encendido ? 'on' : '';
             const texto = !datos ? '--' : bloqueada ? 'Bloqueada' : encendido ? 'Encendido' : 'Apagado';
@@ -167,7 +170,13 @@ function App() {
                   <p className="actuador-nombre">{a.nombre}</p>
                   {bloqueada && <p className="accion">Nivel crítico del tanque</p>}
                 </div>
-                <span className={`pill ${estado}`}>{texto}</span>
+                <button
+                  className={`pill ${estado}`}
+                  disabled={!datos || bloqueada}
+                  onClick={() => setForzados((f) => ({ ...f, [a.key]: !encendido }))}
+                >
+                  {texto}
+                </button>
               </div>
             );
           })}
